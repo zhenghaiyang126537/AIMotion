@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{5B68C381-4D57-F422-FA1E-C8B9A4DABD4D}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "AIMotion",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
