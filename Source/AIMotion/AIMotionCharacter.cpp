@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -121,20 +122,33 @@ void AAIMotionCharacter::MoveForward(float Value)
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
+
+		if (Value != 0.0f)
+		{
+			int32 BoneNum = GetMesh()->GetNumBones();
+			for (size_t i = 0; i < BoneNum; i++)
+			{
+				FTransform BoneTransform = GetMesh()->GetBoneTransform(i);
+				FVector CurLocation = BoneTransform.GetLocation();
+				CurLocation += Direction * Value;
+				BoneTransform.SetLocation(CurLocation);
+				GetMesh()->SkeletalMesh->RefSkeleton.UpdateRefPoseTransform(i, BoneTransform);
+			}
+		}
 	}
 }
 
 void AAIMotionCharacter::MoveRight(float Value)
 {
-	if ( (Controller != nullptr) && (Value != 0.0f) )
-	{
-		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-	
-		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Direction, Value);
-	}
+	//if ( (Controller != nullptr) && (Value != 0.0f) )
+	//{
+	//	// find out which way is right
+	//	const FRotator Rotation = Controller->GetControlRotation();
+	//	const FRotator YawRotation(0, Rotation.Yaw, 0);
+	//
+	//	// get right vector 
+	//	const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	//	// add movement in that direction
+	//	AddMovementInput(Direction, Value);
+	//}
 }
