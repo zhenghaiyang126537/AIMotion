@@ -5,6 +5,9 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/PoseableMeshComponent.h"
+#include "Animation/AnimSingleNodeInstance.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
@@ -46,6 +49,23 @@ AAIMotionCharacter::AAIMotionCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+	FName  PoseableMeshName(TEXT("CharacterMesh1"));
+	PoseableMesh = CreateOptionalDefaultSubobject<UPoseableMeshComponent>(PoseableMeshName);
+	if (PoseableMesh)
+	{
+		PoseableMesh->AlwaysLoadOnClient = true;
+		PoseableMesh->AlwaysLoadOnServer = true;
+		PoseableMesh->bOwnerNoSee = false;
+		PoseableMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPose;
+		PoseableMesh->bCastDynamicShadow = true;
+		PoseableMesh->bAffectDynamicIndirectLighting = true;
+		PoseableMesh->PrimaryComponentTick.TickGroup = TG_PrePhysics;
+		PoseableMesh->SetupAttachment(GetCapsuleComponent());
+		static FName MeshCollisionProfileName(TEXT("PoseableMesh"));
+		PoseableMesh->SetCollisionProfileName(MeshCollisionProfileName);
+		PoseableMesh->SetGenerateOverlapEvents(false);
+		PoseableMesh->SetCanEverAffectNavigation(false);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -122,33 +142,52 @@ void AAIMotionCharacter::MoveForward(float Value)
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
-
-		if (Value != 0.0f)
-		{
-			int32 BoneNum = GetMesh()->GetNumBones();
-			for (size_t i = 0; i < BoneNum; i++)
-			{
-				FTransform BoneTransform = GetMesh()->GetBoneTransform(i);
-				FVector CurLocation = BoneTransform.GetLocation();
-				CurLocation += Direction * Value;
-				BoneTransform.SetLocation(CurLocation);
-				GetMesh()->SkeletalMesh->RefSkeleton.UpdateRefPoseTransform(i, BoneTransform);
-			}
-		}
 	}
 }
 
 void AAIMotionCharacter::MoveRight(float Value)
 {
-	//if ( (Controller != nullptr) && (Value != 0.0f) )
-	//{
-	//	// find out which way is right
-	//	const FRotator Rotation = Controller->GetControlRotation();
-	//	const FRotator YawRotation(0, Rotation.Yaw, 0);
-	//
-	//	// get right vector 
-	//	const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	//	// add movement in that direction
-	//	AddMovementInput(Direction, Value);
-	//}
+	if ( (Controller != nullptr) && (Value != 0.0f) )
+	{
+		// find out which way is right
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+	
+		// get right vector 
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// add movement in that direction
+		AddMovementInput(Direction, Value);
+	}
+}
+TMap<FName, FTransform> AAIMotionCharacter::GetBoneAllTransfrom()
+{
+	TMap<FName, FTransform> Res;
+	if (nullptr == PoseableMesh)
+	{
+		return Res;
+	}
+	TArray<FName> BoneNameArray;
+	PoseableMesh->GetBoneNames(BoneNameArray);
+	for (size_t i = 0; i < BoneNameArray.Num(); i++)
+	{
+		Res.Add(BoneNameArray[i], PoseableMesh->GetBoneTransformByName(BoneNameArray[i], EBoneSpaces::WorldSpace));
+	}
+	return Res;
+}
+void AAIMotionCharacter::SetBoneAllTransfrom(const TMap<FName, FTransform>& TransformMap)
+{
+	if (nullptr == PoseableMesh)
+	{
+		return;
+	}
+	for (auto it = TransformMap.CreateConstIterator(); it; ++it)
+	{
+		PoseableMesh->SetBoneTransformByName(it->Key, it->Value, EBoneSpaces::WorldSpace);
+	}
+}
+TArray<FVector> AAIMotionCharacter::GetNearHigh()
+{
+	TArray<FVector> Res;
+
+	return Res;
 }

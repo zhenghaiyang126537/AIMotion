@@ -18,6 +18,10 @@ class AAIMotionCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+	/** Follow camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Mesh, meta = (AllowPrivateAccess = "true"))
+	class UPoseableMeshComponent* PoseableMesh;
 public:
 	AAIMotionCharacter();
 
@@ -68,5 +72,12 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+public:
+	//获取所有骨骼的空间位置
+	TMap<FName, FTransform> GetBoneAllTransfrom();
+	//设置所有骨骼的空间位置
+	void SetBoneAllTransfrom(const TMap<FName, FTransform>& TransformMap);
+	//获取角色周围的地形高度列表
+	TArray<FVector> GetNearHigh();
 };
 
