@@ -12,6 +12,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "DrawDebugHelpers.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AAIMotionCharacter
@@ -142,6 +143,7 @@ void AAIMotionCharacter::MoveForward(float Value)
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
+		GetNearHigh();
 	}
 }
 
@@ -188,6 +190,46 @@ void AAIMotionCharacter::SetBoneAllTransfrom(const TMap<FName, FTransform>& Tran
 TArray<FVector> AAIMotionCharacter::GetNearHigh()
 {
 	TArray<FVector> Res;
+	FVector CurLocation = GetActorLocation();
+	FRotator CurRotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, CurRotation.Yaw - 90, 0);
+	// get right vector 
+	const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	FCollisionShape Shape;
+	Shape.SetBox(FVector(20.f, 20.f, 20.f));
+	TArray<FHitResult> OutHits;
+	FCollisionObjectQueryParams QueryParamsObj(ECollisionChannel::ECC_WorldStatic);
 
+	for (int32 i = 0; i < 6; ++i)
+	{
+		FVector StartLocation = CurLocation + Direction * i * 100;
+		FVector EndLocation = StartLocation;
+		EndLocation.Z -= 200;
+		bool bHitSuccess = GWorld->SweepMultiByObjectType(OutHits, StartLocation, EndLocation, FQuat(0, 0, 0, 1), QueryParamsObj, Shape);
+		FVector HitPoint = StartLocation;
+		if (bHitSuccess)
+		{
+			for (int32 j = 0; j < OutHits.Num(); j++)
+			{
+				float CurZ = OutHits[j].ImpactPoint.Z;
+
+				if (HitPoint.Z > CurZ)
+				{
+					HitPoint = OutHits[j].ImpactPoint;
+				}
+
+				UE_LOG(LogMemory, Log, TEXT("[Steven.Han]StepExportMapData, Line=%d, CurZ=%f"), __LINE__, CurZ);
+
+			}
+		}
+		Res.Add(HitPoint);
+		FVector DrowLocation = HitPoint;
+		DrowLocation.Z += 100;
+		DrowTip(DrowLocation, HitPoint);
+	}
 	return Res;
+}
+void AAIMotionCharacter::DrowTip(FVector StartPoint, FVector EndPoint)
+{
+	DrawDebugSphere(GWorld, EndPoint, 10.f, 10.f, FColor::Yellow, false, 0.1f, 0, 2.0f);
 }

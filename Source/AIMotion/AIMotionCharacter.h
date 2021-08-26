@@ -79,5 +79,7 @@ public:
 	void SetBoneAllTransfrom(const TMap<FName, FTransform>& TransformMap);
 	//获取角色周围的地形高度列表
 	TArray<FVector> GetNearHigh();
+	//画提示点
+	void DrowTip(FVector StartPoint, FVector EndPoint);
 };
 
